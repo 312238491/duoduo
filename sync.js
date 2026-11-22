@@ -4,7 +4,7 @@
  * 它不认识「奶量」「臭臭」这些东西，只负责：
  *   - 请求（anon key 走 apikey，schema 走 Profile 头，带 8 秒超时）
  *   - 待推送队列（同一个 id 只留最新一条，分批 200 条 upsert）
- *   - 墓碑（本机删掉的 id，防止被别的手机的旧数据拉回来）
+ *   - 墓碑（本机删掉的 id，防止被别的手机的旧数据拉回来；保留 15 天后自动清理）
  *   - 拉取全量（按 app 过滤 + Range 翻页）并交给页面合并
  *   - 项目类别表（duoduo_items）的读写，两个页面共用
  *   - 进度鼓励文案表（duoduo_sayings）的只读拉取（只有溪溪启用，多多不填即关闭）
@@ -44,6 +44,7 @@
     var TIMEOUT = cfg.timeout || 8000;        /* 单次请求上限(ms) */
     var BATCH   = 200;                        /* 每次推送的行数上限 */
     var PAGE_SIZE = 1000;                     /* 接口单次最多返回的行数 */
+    var TOMB_TTL  = 15 * 24 * 60 * 60 * 1000; /* 墓碑保留 15 天，之后自动清理 */
     var SAY       = !!cfg.itemSayFields;      /* 项目表是否带「朗读开关 + 朗读文案」两个字段 */
     var EXCL      = !!cfg.itemExclField;      /* 项目表是否带「互斥组」字段 */
     var SPAN      = !!cfg.itemSpanField;      /* 项目表是否带「卡片宽度」字段 */
@@ -62,8 +63,28 @@
       return r;
     }
 
-    var tombstones     = readJSON(K.tomb, {});        /* 删掉的记录 id */
-    var itemTombstones = readJSON(K.tombItems, {});   /* 删掉的项目 id */
+    /* 墓碑：{ id: 删除时间戳 }。
+     * 旧版存的是 true，启动时迁移为当前时间、再保留一个周期；
+     * 超过 TOMB_TTL 的条目直接丢弃，避免只增不减。 */
+    function pruneTombstones(map){
+      var now = Date.now(), out = {}, changed = false;
+      if(!map || typeof map !== 'object') return { map:{}, changed:false };
+      Object.keys(map).forEach(function(id){
+        var t = map[id];
+        if(t === true){ t = now; changed = true; }          /* 旧格式迁移 */
+        if(typeof t !== 'number'){ changed = true; return; }
+        if(now - t > TOMB_TTL){ changed = true; return; }   /* 过期清理 */
+        out[id] = t;
+      });
+      return { map: out, changed: changed };
+    }
+
+    var _tomb     = pruneTombstones(readJSON(K.tomb, {}));
+    var _tombItem = pruneTombstones(readJSON(K.tombItems, {}));
+    var tombstones     = _tomb.map;        /* 删掉的记录 id → 删除时间 */
+    var itemTombstones = _tombItem.map;    /* 删掉的项目 id → 删除时间 */
+    if(_tomb.changed)     writeJSON(K.tomb, tombstones);
+    if(_tombItem.changed) writeJSON(K.tombItems, itemTombstones);
     var recPending     = readJSON(K.pending, []).map(normalizePendingRow);   /* 还没推上去的记录行 */
     var itemPending    = readJSON(K.pendingItems, []).map(function(r){
       /* 后加的字段：旧队列里的行缺这个键会让整批 upsert 报 400，先补齐 */
@@ -283,7 +304,7 @@
 
     /* 删除项目：本机已从 items 移除后调用；云端该行置 deleted=true，历史勾选记录保留不显示 */
     function removeItem(item){
-      itemTombstones[item.id] = true;
+      itemTombstones[item.id] = Date.now();
       writeJSON(K.tombItems, itemTombstones);
       for(var i = itemPending.length - 1; i >= 0; i--){
         if(itemPending[i].id === item.id) itemPending.splice(i, 1);
@@ -313,6 +334,22 @@
       });
     }
 
+    /* 云端已删除的行如果比本机待推送的更新，就丢掉本机这条旧行。
+     * 墓碑 15 天后会被清理，这一步保证过期后旧副本也不会被重新推回云端。 */
+    function dropStalePending(rows, pending){
+      var del = {};
+      (rows || []).forEach(function(r){
+        if(!r || !r.deleted) return;
+        var u = Date.parse(r.updated_at) || 0;
+        if(del[r.id] === undefined || u > del[r.id]) del[r.id] = u;
+      });
+      return pending.filter(function(p){
+        var u = del[p.id];
+        if(u === undefined) return true;
+        return (Date.parse(p.updated_at) || 0) > u;
+      });
+    }
+
     /* ---------------- 拉取云端全量并合并 ---------------- */
     /* 接口默认一次最多返回 1000 行，所以按 Range 翻页拿完，
      * 否则记录攒到 1000 条以上就会悄悄同步不全。 */
@@ -331,6 +368,11 @@
       }
       return step(0).then(function(rows){
         hadAnyRecRows = rows.length > 0;
+        var kept = dropStalePending(rows, recPending);
+        if(kept.length !== recPending.length){
+          recPending = kept;
+          writeJSON(K.pending, recPending);
+        }
         var changed = false;
         rows.forEach(function(r){ if(cfg.applyRow(r)) changed = true; });
         return changed;
@@ -344,6 +386,11 @@
       }).then(function(rows){
         rows = rows || [];
         hadAnyItemRows = rows.length > 0;
+        var kept = dropStalePending(rows, itemPending);
+        if(kept.length !== itemPending.length){
+          itemPending = kept;
+          writeJSON(K.pendingItems, itemPending);
+        }
         var changed = false;
         rows.forEach(function(r){ if(applyItemRow(r)) changed = true; });
         if(changed) sortItems();
@@ -432,7 +479,7 @@
     return {
       now: syncNow,
       queue: function(row){ queueRow(row, false); },
-      tomb: function(id){ tombstones[id] = true; writeJSON(K.tomb, tombstones); },
+      tomb: function(id){ tombstones[id] = Date.now(); writeJSON(K.tomb, tombstones); },
       isTombstoned: function(id){ return !!tombstones[id]; },
       pushItem: pushItem,
       removeItem: removeItem,
