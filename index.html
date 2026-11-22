@@ -126,7 +126,8 @@
     height:auto;min-height:88px;
     overflow-y:auto;overflow-x:hidden;
     -webkit-overflow-scrolling:touch;
-    overscroll-behavior:contain;
+    /* 内部滚到底后继续滑动时把滚动交给外层页面 */
+    overscroll-behavior-y:auto;
   }
   table{width:100%;border-collapse:collapse;table-layout:fixed;}
   th,td{padding:12px 14px;text-align:left;font-size:14px;overflow:hidden;}
@@ -547,6 +548,8 @@
   <div class="modal">
     <h3>臭臭情况</h3>
     <div class="m-sub" id="poopTimeHint"></div>
+    <div class="fld">🕐 时间</div>
+    <input type="time" id="poopTime" step="60">
     <div class="lv-opts" id="poopOpts">
       <button data-lv="少量">少量</button>
       <button data-lv="正常">正常</button>
@@ -1078,9 +1081,9 @@
     sync.queue(rowFrom('feed', curDate, item, false, item.u));
   }
 
-  function addPoop(level){
+  function addPoop(level, time){
     var day  = getDay(curDate);
-    var item = { id: uid(), time: nowTime(), level: normalizeLevel(level) || POOP_DEFAULT, u: Date.now() };
+    var item = { id: uid(), time: /^\d{2}:\d{2}$/.test(time || '') ? time : nowTime(), level: normalizeLevel(level) || POOP_DEFAULT, u: Date.now() };
     day.poop.push(item);
     save();
     render();
@@ -1293,6 +1296,7 @@
   var poopMask   = document.getElementById('poopMask');
   var poopOpts   = document.querySelectorAll('#poopOpts button');
   var poopCustom = document.getElementById('poopCustom');
+  var poopTime   = document.getElementById('poopTime');
   var poopOk     = document.getElementById('poopOk');
   var poopTargetId = null;   /* null = 新增记录 */
 
@@ -1325,9 +1329,13 @@
       document.getElementById('poopTimeHint').textContent = fmtDateCN(curDate);
       poopOpts[POOP_LEVELS.indexOf(POOP_DEFAULT)].classList.add('on');
       poopCustom.value = '';
+      poopTime.value = nowTime();                        /* 默认当前时间，可手改 */
     }else{
       var item = findEntry('poop', id);
-      document.getElementById('poopTimeHint').textContent = fmtDateCN(curDate) + ' ' + item.time;
+      document.getElementById('poopTimeHint').textContent = fmtDateCN(curDate);
+      var tp = String(item.time || '').split(':');
+      poopTime.value = (/^\d{2}:\d{2}$/.test(item.time) ? item.time
+                        : (/^\d{1,2}:\d{2}$/.test(item.time) ? pad(+tp[0]) + ':' + tp[1] : nowTime()));
       /* 回填：标准三档只点亮一个（单选）；其余内容填进输入框（按逗号拆分） */
       var parts = String(item.level || POOP_DEFAULT).split(/[，,、]/);
       var extra = [];
@@ -1357,7 +1365,7 @@
     clearPoopOpts();
   }
 
-  function setPoopLevel(id, level){
+  function setPoopLevel(id, level, time){
     level = normalizeLevel(level);
     if(!level) return;
     var day = getDay(curDate);
@@ -1365,6 +1373,7 @@
       if(day.poop[i].id !== id) continue;
       var item = day.poop[i];
       item.level = level;
+      if(/^\d{2}:\d{2}$/.test(time || '')) item.time = time;
       item.u = Date.now();
       save();
       render();
@@ -1391,8 +1400,9 @@
     var extra = normalizeLevel(poopCustom.value);
     if(extra) parts.push(extra);
     if(!parts.length) return;
-    if(poopTargetId) setPoopLevel(poopTargetId, parts.join('，'));
-    else             addPoop(parts.join('，'));
+    var t = /^\d{2}:\d{2}$/.test(poopTime.value) ? poopTime.value : nowTime();
+    if(poopTargetId) setPoopLevel(poopTargetId, parts.join('，'), t);
+    else             addPoop(parts.join('，'), t);
     closePoop();
   }
   poopCustom.addEventListener('input', syncPoopOk);
