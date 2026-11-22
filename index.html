@@ -1,0 +1,2012 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>多多的日常记录</title>
+<meta name="apple-mobile-web-app-title" content="多多日常">
+<link rel="apple-touch-icon" sizes="192x192" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+<meta name="theme-color" content="#fdf7fa">
+<style>
+  :root{
+    --pink:#f48fb1;
+    --pink-deep:#e05a85;
+    --pink-soft:#fdeef3;
+    --blue:#8fc7e8;
+    --text:#4a3b42;
+    --text-sub:#9b8a92;
+    --line:#f2e4ea;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+    background:linear-gradient(180deg,#fdf3f7 0%,#fdf8fa 260px);
+    color:var(--text);
+    min-height:100vh;
+    padding-bottom:24px;
+  }
+  .app{max-width:560px;margin:0 auto;padding:0 16px;}
+
+  /* ---------- 顶部标题 ---------- */
+  header{padding:22px 0 14px;text-align:center;}
+  h1{
+    font-size:24px;margin:0;letter-spacing:2px;font-weight:700;
+    background:linear-gradient(90deg,#f48fb1,#f6a86b);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .subtitle{font-size:12px;color:var(--text-sub);margin-top:6px;letter-spacing:1px;}
+
+  /* ---------- 日期栏 ---------- */
+  .datebar{
+    display:flex;align-items:center;gap:8px;
+    background:var(--card);border-radius:16px;padding:10px 12px;
+    box-shadow:0 4px 16px rgba(228,160,186,.14);
+  }
+  .datebar .nav{
+    width:34px;height:34px;flex:0 0 auto;border:none;border-radius:50%;
+    background:var(--pink-soft);color:var(--pink-deep);font-size:18px;line-height:1;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .datebar .nav:active{background:#fadbe6;}
+  .datebar input[type=date]{
+    flex:1 1 auto;min-width:0;border:none;background:transparent;
+    font-size:16px;font-weight:600;color:var(--text);text-align:center;
+    font-family:inherit;outline:none;
+  }
+  .datebar .today{
+    flex:0 0 auto;border:none;border-radius:10px;background:var(--pink-soft);
+    color:var(--pink-deep);font-size:13px;padding:7px 10px;cursor:pointer;font-family:inherit;
+  }
+  .datebar .stat{
+    flex:0 0 auto;border:none;border-radius:10px;background:#eaf5fc;
+    color:#3d87b8;font-size:13px;padding:7px 10px;cursor:pointer;font-family:inherit;
+  }
+
+  /* ---------- 分组标签 ---------- */
+  .section{margin-top:22px;}
+  .section-title{
+    display:flex;align-items:center;gap:8px;
+    font-size:14px;font-weight:700;color:var(--text);margin:0 0 10px 4px;letter-spacing:1px;
+  }
+  .section-title::before{
+    content:"";width:4px;height:15px;border-radius:2px;
+    background:linear-gradient(180deg,var(--pink),#f8b9a0);
+  }
+  .section-title .hint{font-weight:400;font-size:12px;color:var(--text-sub);margin-left:auto;}
+
+  /* ---------- 按次项目卡片（每行 3 格，每张卡片固定同宽） ---------- */
+  /* 单行布局：名称在左、勾选框紧随其后、每个勾选框固定宽度，
+   * 勾选并显示时间后卡片宽度也不会变化 */
+  .check-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-items:start;grid-auto-flow:row dense;}
+  .check-card{
+    background:var(--card);border-radius:14px;padding:9px 10px;
+    box-shadow:0 4px 16px rgba(228,160,186,.12);
+    display:flex;flex-direction:row;align-items:center;gap:6px;min-width:0;
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+  }
+  /* 长按拖动换位 */
+  .check-card.drag-src{opacity:.35;}
+  .check-card.drag-over{outline:2px dashed var(--pink);outline-offset:3px;}
+  .check-card.drag-ghost{
+    position:fixed;z-index:99;pointer-events:none;margin:0;
+    opacity:.95;transform:scale(1.03);
+    box-shadow:0 16px 40px rgba(228,160,186,.45);
+  }
+  .check-card .cname{flex:1 1 auto;min-width:0;font-size:13px;font-weight:600;line-height:1.3;}
+  .check-card .cname .cname-txt{display:block;min-width:0;}
+  .check-card .boxes{flex:0 1 auto;min-width:0;display:flex;flex-wrap:wrap;gap:4px;}
+  /* 勾选框固定宽度：方框在上、时间在下，
+   * 勾选前后尺寸完全不变，不会把卡片挤宽；两个勾选框也能并排放下 */
+  .cb{
+    flex:0 0 auto;width:28px;
+    display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;user-select:none;
+    padding:3px 0;border-radius:10px;background:#fbf6f8;transition:.15s;
+  }
+  .cb:active{transform:scale(.97);}
+  .cb .box{
+    width:20px;height:20px;border-radius:6px;border:2px solid #e8d3dc;background:#fff;
+    display:flex;align-items:center;justify-content:center;transition:.18s;flex:0 0 auto;
+  }
+  .cb .box svg{width:13px;height:13px;opacity:0;transform:scale(.6);transition:.18s;}
+  .cb .box svg path{stroke:#fff;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+  .cb .time{display:block;height:11px;line-height:11px;font-size:9px;color:var(--text-sub);font-variant-numeric:tabular-nums;}
+  .cb.done{background:#fdeef3;}
+  .cb.done .box{background:var(--pink);border-color:var(--pink);}
+  .cb.done .box svg{opacity:1;transform:scale(1);}
+  .cb.done .time{color:var(--pink-deep);font-weight:600;}
+
+  /* ---------- 明细表格 ---------- */
+  .table-card{
+    background:var(--card);border-radius:16px;
+    box-shadow:0 4px 16px rgba(228,160,186,.12);
+    /* 高度由 JS 按“表头 + 8 行”精确计算，超出后框内上下滚动 */
+    height:auto;min-height:88px;
+    overflow-y:auto;overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+  }
+  table{width:100%;border-collapse:collapse;table-layout:fixed;}
+  th,td{padding:12px 14px;text-align:left;font-size:14px;overflow:hidden;}
+  tbody td{text-align:center;}
+  thead th{
+    position:sticky;top:0;z-index:3;text-align:center;
+    font-size:12px;font-weight:600;color:var(--text-sub);letter-spacing:1px;
+    background:#fdf7fa;border-bottom:1px solid var(--line);
+  }
+  tbody tr+tr{border-top:1px solid var(--line);}
+  /* 滚动条（窄屏隐藏，保持干净） */
+  .table-card::-webkit-scrollbar{width:4px;}
+  .table-card::-webkit-scrollbar-thumb{background:#f2dbe4;border-radius:2px;}
+
+  /* 表格内可点击的单元格：点开弹窗输入 */
+  .cell-btn{
+    border:1px solid transparent;border-radius:9px;padding:7px 8px;
+    font-family:inherit;font-size:14px;font-weight:600;
+    background:transparent;cursor:pointer;max-width:100%;
+    font-variant-numeric:tabular-nums;
+  }
+  .cell-btn:hover{background:#fbf6f8;}
+  .cell-btn:active{background:#f9e6ee;}
+  .cell-btn.time{color:var(--text);}
+  .cell-btn.ml{color:var(--pink-deep);}
+  .cell-btn.bml{color:var(--main-deep);}
+  /* 臭臭等级（正常/稀/干）：数量列靠左，这里单独居中 */
+  .cell-btn.lv{display:block;width:fit-content;margin:0 auto;text-align:center;color:#b5772f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .unit-sm{font-size:11px;color:var(--text-sub);margin-left:2px;}
+  /* 明细里的图标（🍼 / 🤱）：固定宽度的图标格 + 图标居中，两个图标按中线对齐 */
+  .cell-btn .ico{display:inline-block;width:20px;text-align:center;font-size:14px;line-height:1;margin-right:6px;}
+  /* 数字固定占位并在格内居中，各行数字的视觉中心一致 */
+  .cell-btn .num{display:inline-block;min-width:2.6em;text-align:center;}
+  /* 数量列靠左：图标居中于同一竖线，数字在各自的数字格内居中 */
+  tbody td.qty{text-align:left;}
+  .qty-sep{color:#c9d6e4;margin:0 2px;}
+  /* ml 文本现在跟在按钮里，保持原来的浅灰小字 */
+  .cell-btn .unit-sm{color:var(--text-sub);font-weight:400;margin-left:3px;}
+  /* 明细表在手机窄屏下：图标 + 数字 + ml 必须留在同一行，不能被拆行 */
+  .table-card th,.table-card td{padding:12px 6px;}
+  .table-card thead th:nth-child(2){width:72px;}    /* 时间 */
+  .table-card thead th:nth-child(3){width:104px;}   /* 数量 */
+  .table-card thead th:nth-child(4){width:40px;}    /* 删除 */
+  .table-card .cell-btn{white-space:nowrap;padding:7px 4px;}
+  .table-card .cell-btn .ico{width:18px;margin-right:4px;}
+  .table-card .cell-btn .num{min-width:2.2em;}
+  .lv-opts{display:flex;gap:8px;}
+  .lv-opts button{
+    flex:1;border:2px solid var(--line);border-radius:12px;padding:12px 0;
+    background:#fdfafb;color:var(--text);font-family:inherit;
+    font-size:15px;font-weight:600;cursor:pointer;
+  }
+  .lv-opts button:active{border-color:var(--pink);background:var(--pink-soft);color:var(--pink-deep);}
+  .lv-opts button.on{border-color:var(--pink);background:var(--pink-soft);color:var(--pink-deep);}
+  /* 臭臭「其他情况」自由输入 */
+  #poopCustom{font-size:15px;text-align:center;margin-top:10px;}
+  #poopCustom::placeholder{color:#cbbcc3;font-size:13px;}
+  .pill{
+    display:inline-block;padding:2px 9px;border-radius:8px;font-size:13px;
+  }
+  .pill.feed{background:#fdeef3;color:#d9527c;}
+  .pill.poop{background:#fdf1e2;color:#b5772f;}
+  .del{
+    border:none;background:transparent;color:#d9c7ce;font-size:16px;cursor:pointer;
+    padding:2px 6px;line-height:1;border-radius:6px;
+  }
+  .del:active{background:#f7eef2;color:var(--pink-deep);}
+  .empty{padding:26px 14px;text-align:center;color:var(--text-sub);font-size:13px;}
+
+  /* ---------- 管理项目入口（底部，做成醒目按钮） ---------- */
+  .manage-wrap{display:flex;justify-content:center;margin:24px 0 2px;}
+  .manage-btn{
+    border:2px solid var(--pink);background:var(--pink-soft);color:var(--pink-deep);
+    font-family:inherit;font-size:14px;font-weight:700;letter-spacing:2px;
+    padding:11px 26px;border-radius:14px;cursor:pointer;
+  }
+  .manage-btn:active{background:#fadbe6;transform:scale(.98);}
+
+  /* ---------- 数据导入 / 导出（弱化样式） ---------- */
+  .data-tools{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    margin:20px 0 6px;
+  }
+  .data-tools button{
+    border:none;background:none;font-family:inherit;font-size:12px;
+    color:#cbbcc3;padding:6px 4px;cursor:pointer;letter-spacing:1px;
+  }
+  .data-tools button:active{color:var(--pink-deep);}
+  .data-tools .sep{color:#ecdfe4;font-size:11px;}
+  .sync-line{margin:0 0 6px;}
+  #syncState{font-size:12px;color:#cbbcc3;letter-spacing:1px;}
+  #syncState.ok{color:#8bbf9a;}
+  #syncState.busy{color:#c9a86a;}
+  #syncState.err{color:#e0708f;}
+
+  /* ---------- 管理项目弹层 ---------- */
+  .modal .item-list{max-height:44vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .modal .item-row{display:flex;align-items:center;gap:8px;padding:6px 0;}
+  .modal .item-row+.item-row{border-top:1px solid var(--line);}
+  .modal .item-row .item-name{
+    flex:1 1 auto;min-width:0;border:2px solid var(--line);border-radius:10px;
+    padding:9px 10px;font-size:14px;font-family:inherit;color:var(--text);
+    outline:none;background:#fdfafb;
+  }
+  .modal .item-row .item-name:focus{border-color:var(--pink);background:#fff;}
+  .modal .item-row .item-count{
+    flex:0 0 62px;width:62px;border:2px solid var(--line);border-radius:10px;
+    padding:9px 4px;font-size:15px;font-weight:700;text-align:center;
+    font-family:inherit;color:var(--text);outline:none;background:#fdfafb;
+  }
+  .modal .item-row .item-count:focus{border-color:var(--pink);background:#fff;}
+  .modal .item-row .item-del{
+    flex:0 0 auto;border:none;background:transparent;color:#d9c7ce;font-size:18px;
+    cursor:pointer;padding:2px 8px;line-height:1;border-radius:8px;
+  }
+  .modal .item-row .item-del:active{background:#f7eef2;color:var(--pink-deep);}
+  .modal .item-add{display:flex;align-items:center;gap:8px;margin-top:12px;}
+  .modal .item-add input[type=text]{
+    flex:1 1 auto;min-width:0;border:2px solid var(--line);border-radius:10px;
+    padding:10px;font-size:14px;font-family:inherit;color:var(--text);
+    outline:none;background:#fdfafb;
+  }
+  .modal .item-add input[type=text]:focus{border-color:var(--pink);background:#fff;}
+  .modal .item-add input[type=number]{
+    flex:0 0 62px;width:62px;border:2px solid var(--line);border-radius:10px;
+    padding:10px 4px;font-size:15px;font-weight:700;text-align:center;
+    font-family:inherit;color:var(--text);outline:none;background:#fdfafb;
+  }
+  .modal .item-add input[type=number]:focus{border-color:var(--pink);background:#fff;}
+  .modal .item-add button{
+    flex:0 0 auto;border:none;border-radius:10px;padding:11px 14px;
+    background:linear-gradient(135deg,#f48fb1,#ef6f9b);color:#fff;
+    font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;
+  }
+  .modal .item-add button:active{opacity:.86;}
+
+  /* ---------- 记录按钮（今日明细上方） ---------- */
+  .record-actions{display:flex;gap:12px;}
+  .big-btn{
+    flex:1;border:none;border-radius:16px;padding:15px 0;font-size:16px;font-weight:700;
+    color:#fff;font-family:inherit;letter-spacing:2px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s;
+  }
+  .big-btn:active{transform:scale(.97);}
+  .big-btn.poop{background:linear-gradient(135deg,#f0b878,#e39c4d);box-shadow:0 6px 16px rgba(227,156,77,.3);}
+
+  /* 喂奶：左半开弹窗 · 右半按默认奶量直接记录 · 右缘齿轮改默认值 */
+  .feed-split{
+    flex:2 1 0;min-width:0;display:flex;border-radius:16px;overflow:hidden;
+    background:linear-gradient(135deg,#f48fb1,#ef6f9b);
+    box-shadow:0 6px 16px rgba(239,111,155,.32);
+  }
+  .feed-split button{
+    border:none;background:transparent;color:#fff;font-family:inherit;font-weight:700;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:background .15s;padding:15px 2px;
+  }
+  .feed-split button:active{background:rgba(255,255,255,.2);}
+  .feed-split .fs-main{flex:1 1 0;min-width:0;font-size:16px;letter-spacing:2px;}
+  .feed-split .fs-quick{
+    flex:1 1 0;min-width:0;font-size:14px;letter-spacing:0;padding:15px 9px;
+    border-left:1px solid rgba(255,255,255,.36);font-variant-numeric:tabular-nums;
+  }
+  .feed-split .fs-cfg{
+    flex:0 0 auto;width:34px;font-size:14px;line-height:1;padding:15px 0;
+    border-left:1px solid rgba(255,255,255,.36);background:rgba(0,0,0,.07);
+  }
+
+  /* ---------- 弹层 ---------- */
+  .mask{
+    position:fixed;inset:0;background:rgba(74,59,66,.42);z-index:50;
+    display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  .mask.show{display:flex;}
+  .modal{
+    background:#fff;border-radius:20px;width:100%;max-width:380px;
+    padding:22px 20px;box-shadow:0 20px 50px rgba(0,0,0,.2);
+    animation:pop .18s ease-out;
+    max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  }
+  @keyframes pop{from{transform:scale(.94);opacity:.4}to{transform:scale(1);opacity:1}}
+  .modal h3{margin:0 0 4px;font-size:17px;text-align:center;}
+  .modal .m-sub{text-align:center;font-size:12px;color:var(--text-sub);margin-bottom:16px;}
+  .modal input[type=number]{
+    width:100%;border:2px solid var(--line);border-radius:14px;padding:14px;
+    font-size:22px;font-weight:700;text-align:center;font-family:inherit;color:var(--text);
+    outline:none;background:#fdfafb;
+  }
+  .modal input[type=number]:focus{border-color:var(--pink);background:#fff;}
+  .modal .unit{text-align:center;font-size:12px;color:var(--text-sub);margin-top:6px;}
+  .modal .quick{display:flex;gap:8px;margin-top:12px;}
+  .modal .quick button{
+    flex:1;border:none;background:#fbf4f7;color:var(--pink-deep);border-radius:10px;
+    padding:9px 0;font-size:14px;font-family:inherit;cursor:pointer;font-weight:600;
+  }
+  .modal .quick button:active{background:#f9e6ee;}
+  /* 喂奶弹层：奶粉 / 母乳 两个字段 */
+  .modal .fld{font-size:13px;font-weight:600;color:var(--text-sub);margin:14px 0 6px 4px;letter-spacing:1px;}
+  .modal .bchk{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--text);cursor:pointer;-webkit-user-select:none;user-select:none;}
+  .modal .bchk input{width:20px;height:20px;accent-color:var(--pink);flex:0 0 auto;}
+  .modal input[type=time]{
+    width:100%;border:2px solid var(--line);border-radius:12px;padding:11px;
+    font-size:17px;font-family:inherit;color:var(--text);outline:none;background:#fbfdff;
+  }
+  .modal input[type=time]:focus{border-color:var(--pink);background:#fff;}
+  .hidden{display:none !important;}
+  .modal .acts{display:flex;gap:10px;margin-top:18px;}
+  .modal .acts button{
+    flex:1;border:none;border-radius:14px;padding:13px 0;font-size:15px;font-weight:600;
+    font-family:inherit;cursor:pointer;
+  }
+  .modal .acts .cancel{background:#f5f0f2;color:#8b7a82;}
+  .modal .acts .ok{background:linear-gradient(135deg,#f48fb1,#ef6f9b);color:#fff;}
+  .modal .acts .ok:disabled{opacity:.45;}
+  .modal input[type=date]{
+    width:100%;border:2px solid var(--line);border-radius:12px;padding:11px;
+    font-size:15px;font-family:inherit;color:var(--text);outline:none;background:#fdfafb;
+  }
+  .modal input[type=date]:focus{border-color:var(--pink);background:#fff;}
+  .modal input[type=time]{
+    width:100%;border:2px solid var(--line);border-radius:14px;padding:14px;
+    font-size:22px;font-weight:700;text-align:center;font-family:inherit;
+    color:var(--text);outline:none;background:#fdfafb;
+  }
+  .modal input[type=time]:focus{border-color:var(--pink);background:#fff;}
+  .modal input[type=text]{
+    width:100%;border:2px solid var(--line);border-radius:12px;padding:11px;
+    font-size:13px;font-family:inherit;color:var(--text);outline:none;background:#fdfafb;
+  }
+  .modal input[type=text]:focus{border-color:var(--pink);background:#fff;}
+  .range-row{display:flex;align-items:center;gap:10px;}
+  .range-row span{color:var(--text-sub);font-size:14px;}
+  .range-row>div{flex:1;}
+  .range-row label{display:block;font-size:11px;color:var(--text-sub);margin:0 0 4px 4px;}
+  .stat-result{margin-top:16px;max-height:44vh;overflow:auto;}
+  .stat-result table{font-size:13px;}
+  .stat-result th,.stat-result td{padding:9px 8px;}
+  .stat-summary{
+    background:#fdf7fa;border-radius:12px;padding:10px 12px;font-size:12px;color:var(--text-sub);
+    margin-bottom:10px;line-height:1.6;
+  }
+  .stat-summary b{color:var(--pink-deep);font-size:13px;}
+
+  /* ---------- 手机适配 ---------- */
+  @media (max-width:520px){
+    .app{padding:0 12px;}
+    header{padding:16px 0 12px;}
+    h1{font-size:21px;letter-spacing:1px;}
+    .datebar{gap:6px;padding:8px 10px;border-radius:14px;}
+    .datebar .nav{width:30px;height:30px;font-size:16px;}
+    .datebar input[type=date]{font-size:14px;}
+    .datebar .today,.datebar .stat{font-size:12px;padding:6px 8px;border-radius:9px;}
+    .section{margin-top:16px;}
+    .check-card{padding:9px 10px;border-radius:14px;}
+    th,td{padding:9px 7px;font-size:13px;}
+    thead th{font-size:11px;letter-spacing:0;}
+    .cell-btn{font-size:13px;padding:6px 5px;}
+    .pill{font-size:12px;padding:2px 7px;}
+    .del{font-size:15px;padding:2px 3px;}
+    .big-btn{font-size:15px;letter-spacing:1px;padding:14px 0;border-radius:14px;}
+    .feed-split{border-radius:14px;}
+    .feed-split button{padding:14px 2px;}
+    .feed-split .fs-main{font-size:15px;letter-spacing:1px;}
+    .feed-split .fs-quick{font-size:13px;padding:14px 7px;}
+    .feed-split .fs-cfg{font-size:13px;width:30px;padding:14px 0;}
+    .modal{padding:18px 16px;border-radius:16px;}
+    .modal input[type=number],.modal input[type=time]{font-size:20px;padding:12px;}
+  }
+  @media (max-width:360px){
+    .datebar .today{display:none;}
+    th,td{padding:8px 5px;}
+    .check-card .boxes{gap:4px;}
+    .cb{padding:3px 0;}
+  }
+
+  /* 屏蔽 EdgeOne 部署环境在页面底部注入的提示条。
+   * 它是平台脚本 unified.js 动态插进 body 的 #edgeone-watermark（行内 display:flex），
+   * 用 !important 压住即可；只隐藏不删除——删了会被它自己的 MutationObserver 重新插回来。 */
+  #edgeone-watermark,#fab-popup{display:none !important;}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <h1>多多的日常记录</h1>
+    <div class="subtitle">每一天，都在好好长大</div>
+  </header>
+
+  <!-- 日期栏 -->
+  <div class="datebar">
+    <button class="nav" id="prevDay" title="前一天">‹</button>
+    <input type="date" id="datePicker">
+    <button class="nav" id="nextDay" title="后一天">›</button>
+    <button class="today" id="todayBtn">今天</button>
+    <button class="stat" id="statBtn">统计</button>
+  </div>
+
+  <!-- 按次项目（放在最上面，常用勾选一屏直达） -->
+  <section class="section">
+    <div class="check-cards" id="checkCards"></div>
+  </section>
+
+  <!-- 记录按钮 -->
+  <section class="section">
+    <div class="record-actions">
+      <button class="big-btn poop" id="poopBtn" type="button">💩 臭臭</button>
+      <div class="feed-split">
+        <button class="fs-main" id="feedBtn" type="button">🍼 喂奶</button>
+        <button class="fs-quick" id="feedQuickBtn" type="button" title="按默认奶量直接记录">150ml</button>
+        <button class="fs-cfg" id="feedCfgBtn" type="button" aria-label="设置默认奶量" title="设置默认奶量">⚙</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 不限次项目明细 -->
+  <section class="section">
+    <h2 class="section-title">今日明细<span class="hint" id="detailHint"></span></h2>
+    <div class="table-card">
+      <table>
+        <colgroup>
+          <col style="width:27%">
+          <col style="width:31%">
+          <col style="width:28%">
+          <col style="width:14%">
+        </colgroup>
+        <thead>
+          <tr><th>项目</th><th>时间</th><th>数量</th><th></th></tr>
+        </thead>
+        <tbody id="detailBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 管理项目：底部醒目入口 -->
+  <div class="manage-wrap">
+    <button class="manage-btn" id="manageItemsBtn" type="button">管理项目</button>
+  </div>
+
+  <!-- 数据导入 / 导出 -->
+  <div class="data-tools">
+    <button id="exportBtn" type="button">导出数据</button>
+    <span class="sep">·</span>
+    <button id="importBtn" type="button">导入数据</button>
+    <span class="sep">·</span>
+    <button id="updateBtn" type="button">更新版本</button>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+  </div>
+
+  <!-- 云端同步状态 -->
+  <div class="data-tools sync-line">
+    <span id="syncState">☁ 未同步</span>
+    <span class="sep">·</span>
+    <button id="syncBtn" type="button">立即同步</button>
+  </div>
+</div>
+
+<!-- 喂奶输入弹层 -->
+<div class="mask" id="feedMask">
+  <div class="modal">
+    <h3 id="feedTitle">记录喂奶</h3>
+    <div class="m-sub" id="feedTimeHint"></div>
+    <div class="fld">🕐 时间</div>
+    <input type="time" id="feedTime" step="60">
+    <div class="fld">🍼 奶粉</div>
+    <input type="number" id="mlInput" inputmode="numeric" placeholder="0" min="1" max="999">
+    <div class="quick">
+      <button data-ml="50">50</button>
+      <button data-ml="100">100</button>
+      <button data-ml="150">150</button>
+      <button data-ml="200">200</button>
+    </div>
+    <div class="fld"><label class="bchk"><input type="checkbox" id="bmlChk">🤱 有母乳</label></div>
+    <input type="number" id="bmlInput" inputmode="numeric" placeholder="母乳量（可不填）" min="1" max="999" class="hidden">
+    <div class="unit">单位：ml（毫升）· 快捷按钮只填数，点「确定记录」才保存</div>
+    <div class="acts">
+      <button class="cancel" id="feedCancel">取消</button>
+      <button class="ok" id="feedOk">确定记录</button>
+    </div>
+  </div>
+</div>
+
+<!-- 默认奶量设置弹层 -->
+<div class="mask" id="cfgMask">
+  <div class="modal">
+    <h3>默认奶量</h3>
+    <div class="m-sub">点右侧「奶量」按钮时，直接按这个数值记录</div>
+    <input type="number" id="cfgInput" inputmode="numeric" placeholder="150" min="1" max="999">
+    <div class="unit">单位：ml（毫升）</div>
+    <div class="quick" id="cfgQuick">
+      <button data-v="50">50</button>
+      <button data-v="100">100</button>
+      <button data-v="150">150</button>
+      <button data-v="200">200</button>
+    </div>
+    <div class="acts">
+      <button class="cancel" id="cfgCancel">取消</button>
+      <button class="ok" id="cfgOk">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 时间修改弹层 -->
+<div class="mask" id="timeMask">
+  <div class="modal">
+    <h3>修改时间</h3>
+    <div class="m-sub" id="timeSub"></div>
+    <input type="time" id="timeInput" step="60">
+    <div class="acts">
+      <button class="cancel" id="timeCancel">取消</button>
+      <button class="ok" id="timeOk">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 臭臭等级弹层 -->
+<div class="mask" id="poopMask">
+  <div class="modal">
+    <h3>臭臭情况</h3>
+    <div class="m-sub" id="poopTimeHint"></div>
+    <div class="lv-opts" id="poopOpts">
+      <button data-lv="少量">少量</button>
+      <button data-lv="正常">正常</button>
+      <button data-lv="大量">大量</button>
+    </div>
+    <input type="text" id="poopCustom" maxlength="30" placeholder="其他情况，可自由填写">
+    <div class="acts">
+      <button class="cancel" id="poopCancel">取消</button>
+      <button class="ok" id="poopOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 统计弹层 -->
+<div class="mask" id="statMask">
+  <div class="modal">
+    <h3>数据统计</h3>
+    <div class="m-sub">选择日期段，汇总区间内各项目数据</div>
+    <div class="range-row">
+      <div>
+        <label>开始日期</label>
+        <input type="date" id="statFrom">
+      </div>
+      <span>~</span>
+      <div>
+        <label>结束日期</label>
+        <input type="date" id="statTo">
+      </div>
+    </div>
+    <div class="stat-result" id="statResult"></div>
+    <div class="acts">
+      <button class="cancel" id="statClose">关闭</button>
+      <button class="ok" id="statRun">开始统计</button>
+    </div>
+  </div>
+</div>
+
+<!-- 更新版本弹层 -->
+<div class="mask" id="updateMask">
+  <div class="modal">
+    <h3>更新版本</h3>
+    <div class="m-sub">粘贴控制台最新生成的完整链接（域名 + token）</div>
+    <input type="text" id="updateInput" placeholder="https://…edgeone.dev/?eo_token=…"
+           autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <div class="unit" id="updateHint">仅替换页面缓存，不影响已有记录</div>
+    <div class="acts">
+      <button class="cancel" id="updateCancel">取消</button>
+      <button class="ok" id="updateOk">更新</button>
+    </div>
+  </div>
+</div>
+
+<!-- 管理项目弹层 -->
+<div class="mask" id="itemsMask">
+  <div class="modal">
+    <h3>管理项目</h3>
+    <div class="m-sub">增删或修改每天要做的项目，改动会同步到其他手机</div>
+    <div class="item-list" id="itemList"></div>
+    <div class="item-add">
+      <input type="text" id="newItemName" maxlength="12" placeholder="新项目名称"
+             autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input type="number" id="newItemCount" min="1" max="20" value="1" inputmode="numeric" title="每天次数">
+      <button id="newItemAdd" type="button">添加</button>
+    </div>
+    <div class="acts">
+      <button class="ok" id="itemsClose">完成</button>
+    </div>
+  </div>
+</div>
+
+<script src="sync.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  var STORE_KEY = 'duoduo_records_v1';
+  var ITEMS_KEY = 'duoduo_items_v1';
+  var APP_ID    = 'duoduo';
+
+  /* 默认项目：仅在本机与云端都没有项目时用来播种（之后以数据库为准，可随时增删） */
+  var SEED_ITEMS = [
+    { id:'vitaminAD', name:'维生素AD', count:1 },
+    { id:'probiotic',  name:'益生菌',   count:1 }
+  ];
+
+  var FEED_LABEL   = '喂奶';
+  var BREAST_LABEL = '母乳';
+  var POOP_LABEL = '臭臭';
+
+  /* 臭臭等级：点「臭臭」默认记「正常」，需要时点表格里的等级改 */
+  var POOP_LEVELS  = ['少量', '正常', '大量'];
+  var POOP_DEFAULT = '正常';
+
+  var data  = load();
+  var items = loadItems();
+  var curDate = todayStr();
+
+  /* ---------------- 工具 ---------------- */
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+
+  function todayStr(){
+    var d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  function nowTime(){
+    var d = new Date();
+    return pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  function shiftDate(str, days){
+    var p = str.split('-');
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    d.setDate(d.getDate() + days);
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  function fmtDateCN(str){
+    var p = str.split('-');
+    return p[0] + '年' + (+p[1]) + '月' + (+p[2]) + '日';
+  }
+
+  function uid(){
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    }catch(e){ return {}; }
+  }
+
+  function save(){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(data)); }catch(e){}
+  }
+
+  /* 项目（几天要做几次）：以数据库为准，本机只是缓存 */
+  function loadItems(){
+    try{
+      var raw = localStorage.getItem(ITEMS_KEY);
+      var list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    }catch(e){ return []; }
+  }
+
+  function saveItems(){
+    try{ localStorage.setItem(ITEMS_KEY, JSON.stringify(items)); }catch(e){}
+  }
+
+  function findItem(id){
+    for(var i = 0; i < items.length; i++){ if(items[i].id === id) return items[i]; }
+    return null;
+  }
+
+  function escHtml(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /* 勾选记录在云端的主键：必须带 app 前缀，否则两个孩子的同一天同项目会撞车 */
+  function sidFor(dayStr, key, idx){
+    return APP_ID + '|' + dayStr + '|' + key + '|' + idx;
+  }
+
+  /* 取某天的记录，保证结构完整 */
+  function getDay(date){
+    if(!data[date]){ data[date] = { feed:[], poop:[], checks:{} }; }
+    var d = data[date];
+    if(!d.feed)  d.feed = [];
+    if(!d.poop)  d.poop = [];
+    if(!d.checks) d.checks = {};
+    items.forEach(function(p){
+      if(!Array.isArray(d.checks[p.id])) d.checks[p.id] = [];
+      while(d.checks[p.id].length < p.count) d.checks[p.id].push(null);
+      d.checks[p.id].length = p.count;      /* 项目改次数后自动补齐/裁剪 */
+    });
+    return d;
+  }
+
+  /* ---------------- 渲染：按次记录 ---------------- */
+  function renderChecks(){
+    var day = getDay(curDate);
+    var wrap = document.getElementById('checkCards');
+
+    if(!items.length){
+      wrap.innerHTML = '<div class="check-card" style="grid-column:span 3">' +
+                         '<div class="cname" style="font-weight:400;font-size:13px;color:var(--text-sub)">' +
+                           '还没有项目，点底部「管理项目」添加吧 ~</div></div>';
+      return;
+    }
+
+    var html = '';
+    items.forEach(function(p){
+      var times = day.checks[p.id] || [];
+      html += '<div class="check-card" data-id="' + escHtml(p.id) + '">';
+      html +=   '<div class="cname"><span class="cname-txt">' + escHtml(p.name) + '</span></div>';
+      html +=   '<div class="boxes">';
+      for(var i = 0; i < p.count; i++){
+        var t = times[i];
+        /* 时间行始终占位（未勾时留空），勾选前后卡片宽高完全不变 */
+        html += '<div class="cb' + (t ? ' done' : '') + '" data-key="' + p.id + '" data-idx="' + i + '">' +
+                  '<span class="box"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span>' +
+                  '<span class="time">' + (t || '') + '</span>' +
+                '</div>';
+      }
+      html +=   '</div>';
+      html += '</div>';
+    });
+
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('.cb').forEach(function(el){
+      el.addEventListener('click', function(){
+        toggleCheck(el.getAttribute('data-key'), +el.getAttribute('data-idx'));
+      });
+    });
+  }
+
+  /* ---------------- 卡片长按拖动换位 ----------------
+   * 长按 300ms 进入拖动（期间手指滑走超过 10px 视为滚动、自动取消）；
+   * 拖到目标卡片上松手即移动位置，顺序写回项目列表并同步云端。
+   * 点勾选框 / 复选框不会触发拖动。 */
+  (function(){
+    var wrap   = document.getElementById('checkCards');
+    var HOLD   = 300, WIGGLE = 10;
+    var timer  = null, dragEl = null, ghost = null;
+    var sx = 0, sy = 0, grabX = 0, grabY = 0, justDragged = false;
+
+    function cardAt(el){
+      for(var n = el; n && n !== wrap; n = n.parentElement){
+        if(n.classList && n.classList.contains('check-card')) return n;
+      }
+      return null;
+    }
+    function itemOfCard(card){
+      var id = card.getAttribute('data-id');
+      for(var i = 0; i < items.length; i++){ if(items[i].id === id) return items[i]; }
+      return null;
+    }
+    function clearMarks(){
+      wrap.querySelectorAll('.drag-over').forEach(function(c){ c.classList.remove('drag-over'); });
+    }
+    function eatScroll(e){ if(dragEl) e.preventDefault(); }   /* 拖动中拦住页面滚动 */
+
+    function startDrag(card){
+      var r = card.getBoundingClientRect();
+      dragEl = card;
+      grabX  = sx - r.left; grabY = sy - r.top;
+      ghost  = card.cloneNode(true);
+      ghost.classList.add('drag-ghost');
+      ghost.style.width = r.width + 'px';
+      ghost.style.left  = r.left + 'px';
+      ghost.style.top   = r.top  + 'px';
+      document.body.appendChild(ghost);
+      card.classList.add('drag-src');
+      document.addEventListener('touchmove', eatScroll, { passive:false });
+    }
+
+    function endDrag(commit, x, y){
+      clearTimeout(timer); timer = null;
+      document.removeEventListener('touchmove', eatScroll);
+      var src = dragEl, tgt = null;
+      if(commit && src){
+        var under = document.elementFromPoint(x, y);
+        tgt = under && cardAt(under);
+      }
+      if(ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
+      ghost = null; dragEl = null;
+      clearMarks();
+      if(src) src.classList.remove('drag-src');
+      if(src){ justDragged = true; setTimeout(function(){ justDragged = false; }, 400); }
+      if(!(commit && tgt && tgt !== src)) return;
+
+      var moved = itemOfCard(src), over = itemOfCard(tgt);
+      if(!moved || !over || moved === over) return;
+      items.splice(items.indexOf(moved), 1);
+      items.splice(items.indexOf(over), 0, moved);
+      var u = Date.now(), changed = [];
+      items.forEach(function(p, i){
+        if((p.sort || 0) !== i){ p.sort = i; p.u = u + i; changed.push(p); }
+      });
+      saveItems(); render();
+      changed.forEach(function(p){ sync.pushItem(p); });
+    }
+
+    wrap.addEventListener('pointerdown', function(e){
+      if(e.target.closest && e.target.closest('.cb')) return;   /* 勾选框照常点，不进入拖动 */
+      var card = cardAt(e.target);
+      if(!card) return;
+      sx = e.clientX; sy = e.clientY;
+      timer = setTimeout(function(){ startDrag(card); }, HOLD);
+    });
+    document.addEventListener('pointermove', function(e){
+      if(!dragEl){
+        if(timer && (Math.abs(e.clientX - sx) > WIGGLE || Math.abs(e.clientY - sy) > WIGGLE)){
+          clearTimeout(timer); timer = null;      /* 手指滑走了：是滚动，取消拖动 */
+        }
+        return;
+      }
+      ghost.style.left = (e.clientX - grabX) + 'px';
+      ghost.style.top  = (e.clientY - grabY) + 'px';
+      clearMarks();
+      var under = document.elementFromPoint(e.clientX, e.clientY);
+      var card  = under && cardAt(under);
+      if(card && card !== dragEl) card.classList.add('drag-over');
+    });
+    document.addEventListener('pointerup', function(e){ endDrag(true, e.clientX, e.clientY); });
+    document.addEventListener('pointercancel', function(){ endDrag(false, 0, 0); });
+    /* 拖动刚结束的那一下 click 吞掉，避免误触发勾选/朗读 */
+    wrap.addEventListener('click', function(e){
+      if(justDragged){ e.stopPropagation(); e.preventDefault(); }
+    }, true);
+  })();
+
+  function toggleCheck(key, idx){
+    var day = getDay(curDate);
+    var arr = day.checks[key];
+    arr[idx] = arr[idx] ? null : nowTime();
+
+    /* 勾选也要能同步：用 app|日期|项目|第几个 作为固定 id */
+    var sid = sidFor(curDate, key, idx);
+    var u   = Date.now();
+    if(!day.checkU) day.checkU = {};
+    day.checkU[sid] = u;
+
+    save();
+    render();
+    sync.queue(rowFrom('check', curDate,
+             { id:sid, level:key, ml:idx, time:arr[idx] }, !arr[idx], u));
+  }
+
+  /* 汇总一批喂奶记录：奶粉 / 母乳各自的次数与总量
+   * 母乳：bml>0 有量，-1 有母乳但量未知；旧数据 ml/bml 都空 = 旧版母乳按钮，仍计入次数 */
+  function sumFeed(feeds){
+    var r = { bottleCount:0, bottleMl:0, breastCount:0, breastMl:0 };
+    (feeds || []).forEach(function(f){
+      var hasMl  = f.ml  > 0;
+      var hasB   = f.bml > 0 || f.bml === -1;
+      if(hasMl){ r.bottleCount++; r.bottleMl += f.ml; }
+      if(f.bml > 0) r.breastMl += f.bml;
+      if(hasB || (!hasMl && f.bml == null)) r.breastCount++;
+    });
+    return r;
+  }
+
+  /* ---------------- 渲染：明细表格 ---------------- */
+  function renderDetail(){
+    var day = getDay(curDate);
+    var rows = [];
+
+    day.feed.forEach(function(f){
+      rows.push({ type:'feed', time:f.time, ml:f.ml, bml:f.bml, id:f.id });
+    });
+    day.poop.forEach(function(p){
+      rows.push({ type:'poop', time:p.time, level:p.level, id:p.id });
+    });
+    rows.sort(function(a, b){ return a.time > b.time ? -1 : (a.time < b.time ? 1 : 0); });  /* 时间倒序：最新的在最上面 */
+
+    var body = document.getElementById('detailBody');
+    var fs = sumFeed(day.feed);
+    document.getElementById('detailHint').textContent =
+      '🍼 ' + fs.bottleCount + '次 ' + fs.bottleMl + 'ml' +
+      (fs.breastCount ? ' · 🤱 ' + fs.breastCount + '次' + (fs.breastMl ? ' ' + fs.breastMl + 'ml' : '') : '') +
+      ' · 💩 ' + day.poop.length + '次';
+
+    if(!rows.length){
+      body.innerHTML = '<tr><td class="empty" colspan="4">今天还没有记录，点上方按钮开始吧 ~</td></tr>';
+      fitDetail();
+      return;
+    }
+
+    var html = '';
+    rows.forEach(function(r){
+      var name = r.type === 'feed'
+        ? '<span class="pill feed">🍼 ' + FEED_LABEL + '</span>'
+        : '<span class="pill poop">💩 ' + POOP_LABEL + '</span>';
+      var qty;
+      if(r.type === 'feed'){
+        var seg = [];
+        if(r.ml > 0)
+          seg.push('<button class="cell-btn ml" data-type="feed" data-id="' + r.id + '"><span class="ico">🍼</span><span class="num">' + r.ml +
+                   '</span><span class="unit-sm">ml</span></button>');
+        if(r.bml > 0)
+          seg.push('<button class="cell-btn bml" data-type="feed" data-id="' + r.id + '"><span class="ico">🤱</span><span class="num">' + r.bml +
+                   '</span><span class="unit-sm">ml</span></button>');
+        else if(r.bml === -1)
+          seg.push('<button class="cell-btn bml" data-type="feed" data-id="' + r.id + '"><span class="ico">🤱</span><span class="num">' + BREAST_LABEL +
+                   '</span></button>');
+        if(!seg.length)
+          seg.push('<button class="cell-btn ml" data-type="feed" data-id="' + r.id + '"><span class="ico">🤱</span><span class="num">' + BREAST_LABEL +
+                   '</span></button>');
+        qty = seg.join('<span class="qty-sep">·</span>');
+      }else{
+        qty = '<button class="cell-btn lv" data-type="poop" data-id="' + r.id + '">' +
+              (r.level || POOP_DEFAULT) + '</button>';
+      }
+      html += '<tr>' +
+                '<td>' + name + '</td>' +
+                '<td><button class="cell-btn time" data-type="' + r.type + '" data-id="' + r.id + '">' +
+                    r.time + '</button></td>' +
+                '<td class="qty">' + qty + '</td>' +
+                '<td style="text-align:right"><button class="del" data-type="' + r.type + '" data-id="' + r.id + '" title="删除">×</button></td>' +
+              '</tr>';
+    });
+    body.innerHTML = html;
+
+    body.querySelectorAll('.del').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        removeEntry(btn.getAttribute('data-type'), btn.getAttribute('data-id'));
+      });
+    });
+    body.querySelectorAll('.cell-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var type = btn.getAttribute('data-type');
+        var id   = btn.getAttribute('data-id');
+        if(btn.classList.contains('time'))       openTime(type, id);
+        else if(btn.classList.contains('ml') || btn.classList.contains('bml')) openFeedEdit(id);
+        else                                     openPoop(id);
+      });
+    });
+
+    fitDetail();
+  }
+
+  /* ---------------- 明细框：固定显示 8 行，始终露出最新记录 ---------------- */
+  var VISIBLE_ROWS = 8;
+  var rowH = 0;   /* 单行高度（测量后缓存，屏幕尺寸变化时重测） */
+
+  function measureRowH(){
+    var tbody = document.getElementById('detailBody');
+    /* 两种「数量」单元格各测一次，取较大的行高 */
+    var cells = [
+      '<button class="cell-btn ml"><span class="ico">🍼</span><span class="num">120</span><span class="unit-sm">ml</span></button>',
+      '<button class="cell-btn lv">' + POOP_DEFAULT + '</button>'
+    ];
+    var h = 0;
+    cells.forEach(function(cell){
+      var probe = document.createElement('tr');
+      probe.innerHTML = '<td><span class="pill feed">🍼 ' + FEED_LABEL + '</span></td>' +
+                        '<td><button class="cell-btn time">12:00</button></td>' +
+                        '<td>' + cell + '</td>' +
+                        '<td><button class="del">×</button></td>';
+      tbody.appendChild(probe);
+      h = Math.max(h, probe.offsetHeight);
+      tbody.removeChild(probe);
+    });
+    return h || 56;
+  }
+
+  function fitDetail(){
+    var card = document.querySelector('.table-card');
+    var head = card.querySelector('thead');
+    if(!rowH) rowH = measureRowH();
+    card.style.height = (head.offsetHeight + rowH * VISIBLE_ROWS) + 'px';
+
+    /* 无记录时让提示语在 8 行区域内垂直居中 */
+    var emptyCell = card.querySelector('.empty');
+    if(emptyCell){
+      emptyCell.style.paddingTop = Math.max(26, Math.round(rowH * VISIBLE_ROWS / 2) - 12) + 'px';
+    }
+
+  }
+
+  /* 按 id 找当天的记录 */
+  function findEntry(type, id){
+    var day  = getDay(curDate);
+    var arr  = type === 'feed' ? day.feed : day.poop;
+    for(var i = 0; i < arr.length; i++){
+      if(arr[i].id === id) return arr[i];
+    }
+    return null;
+  }
+
+  /* 修改时间：'8:5' 这类写法统一补成 '08:05' */
+  function setEntryTime(type, id, val){
+    var item = findEntry(type, id);
+    if(!item || !/^\d{1,2}:\d{2}$/.test(val)) return;
+    var p = val.split(':');
+    item.time = pad(+p[0]) + ':' + p[1];
+    item.u = Date.now();
+    save();
+    render();
+    sync.queue(rowFrom(type, curDate, item, false, item.u));
+  }
+
+  /* bml：null=没母乳，-1=有母乳但量未知，>0=母乳量 */
+  function setFeed(id, ml, bml, time){
+    var item = findEntry('feed', id);
+    if(!item) return;
+    item.ml  = ml  > 0 ? ml  : null;
+    item.bml = bml === -1 ? -1 : (bml > 0 ? bml : null);
+    if(/^\d{1,2}:\d{2}$/.test(time)) item.time = time;
+    item.u = Date.now();
+    save();
+    render();
+    sync.queue(rowFrom('feed', curDate, item, false, item.u));
+  }
+
+  function removeEntry(type, id){
+    var day = getDay(curDate);
+    var arr = type === 'feed' ? day.feed : day.poop;
+    for(var i = 0; i < arr.length; i++){
+      if(arr[i].id !== id) continue;
+      var item = arr[i];
+      arr.splice(i, 1);
+      sync.tomb(id);                  /* 记下"删过"，免得被别的手机的旧数据拉回来 */
+      save();
+      render();
+      sync.queue(rowFrom(type, curDate, item, true, Date.now()));
+      return;
+    }
+    save();
+    render();
+  }
+
+  /* ---------------- 新增记录 ---------------- */
+  /* ml = 奶粉量；bml = 母乳量：null=没母乳，-1=有母乳但量未知，>0=母乳量 */
+  function addFeed(ml, bml, time){
+    var day  = getDay(curDate);
+    var item = { id: uid(),
+                 ml:  ml  > 0 ? ml  : null,
+                 bml: bml === -1 ? -1 : (bml > 0 ? bml : null),
+                 time: /^\d{1,2}:\d{2}$/.test(time) ? time : nowTime(),
+                 u: Date.now() };
+    day.feed.push(item);
+    save();
+    render();
+    sync.queue(rowFrom('feed', curDate, item, false, item.u));
+  }
+
+  function addPoop(level){
+    var day  = getDay(curDate);
+    var item = { id: uid(), time: nowTime(), level: normalizeLevel(level) || POOP_DEFAULT, u: Date.now() };
+    day.poop.push(item);
+    save();
+    render();
+    sync.queue(rowFrom('poop', curDate, item, false, item.u));
+  }
+
+  /* ---------------- 主渲染 ---------------- */
+  function render(){
+    document.getElementById('datePicker').value = curDate;
+    renderChecks();
+    renderDetail();
+  }
+
+  /* ---------------- 日期切换 ---------------- */
+  document.getElementById('datePicker').addEventListener('change', function(e){
+    if(e.target.value){ curDate = e.target.value; render(); }
+  });
+  document.getElementById('prevDay').addEventListener('click', function(){
+    curDate = shiftDate(curDate, -1); render();
+  });
+  document.getElementById('nextDay').addEventListener('click', function(){
+    curDate = shiftDate(curDate, 1); render();
+  });
+  document.getElementById('todayBtn').addEventListener('click', function(){
+    curDate = todayStr(); render();
+  });
+
+  /* ---------------- 奶量弹层：新增喂奶 / 修改已有记录的奶量 ---------------- */
+  var feedMask     = document.getElementById('feedMask');
+  var mlInput      = document.getElementById('mlInput');
+  var bmlInput     = document.getElementById('bmlInput');
+  var bmlChk       = document.getElementById('bmlChk');
+  var feedTime     = document.getElementById('feedTime');
+  var feedTitle    = document.getElementById('feedTitle');
+  var feedOk       = document.getElementById('feedOk');
+  var feedTargetId = null;   /* null = 新增记录 */
+
+  function openFeed(){ openFeedMask(null); }
+
+  function openFeedEdit(id){
+    if(!findEntry('feed', id)) return;
+    openFeedMask(id);
+  }
+
+  function openFeedMask(id){
+    feedTargetId = id;
+    var isEdit = !!id;
+
+    feedTitle.textContent = isEdit ? '修改喂奶' : '记录喂奶';
+    feedOk.textContent    = isEdit ? '保存' : '确定记录';
+
+    if(isEdit){
+      var item = findEntry('feed', id);
+      document.getElementById('feedTimeHint').textContent = fmtDateCN(curDate);
+      mlInput.value  = item.ml  > 0 ? item.ml  : '';
+      bmlChk.checked = item.bml != null;                 /* -1（量未知）也勾着 */
+      bmlInput.value = item.bml > 0 ? item.bml : '';
+      /* 旧数据可能是 '8:05' 这类非补零写法，time 输入框只认 'HH:MM' */
+      var tp = String(item.time || '').split(':');
+      feedTime.value = (/^\d{2}:\d{2}$/.test(item.time) ? item.time
+                        : (/^\d{1,2}:\d{2}$/.test(item.time) ? pad(+tp[0]) + ':' + tp[1] : nowTime()));
+    }else{
+      document.getElementById('feedTimeHint').textContent = fmtDateCN(curDate);
+      mlInput.value  = '';
+      bmlChk.checked = false;
+      bmlInput.value = '';
+      feedTime.value = nowTime();                        /* 默认当前时间，可手改 */
+    }
+    bmlInput.classList.toggle('hidden', !bmlChk.checked);
+
+    feedMask.classList.add('show');
+    setTimeout(function(){ mlInput.focus(); }, 60);
+    updateOkState();
+  }
+
+  function closeFeed(){
+    feedMask.classList.remove('show');
+    feedTargetId = null;
+  }
+
+  /* 填了奶粉量，或勾了「有母乳」，就可以确定 */
+  function updateOkState(){
+    feedOk.disabled = !(parseInt(mlInput.value, 10) > 0 || bmlChk.checked);
+  }
+
+  function confirmFeed(){
+    var ml  = parseInt(mlInput.value, 10);
+    if(!(ml > 0)) ml = 0;
+    /* 勾了母乳：填了量用量，没填量记 -1（有母乳但量未知）；没勾 = null */
+    var bml = bmlChk.checked ? (parseInt(bmlInput.value, 10) > 0 ? parseInt(bmlInput.value, 10) : -1) : null;
+    if(!ml && bml == null) return;
+    var t = /^\d{2}:\d{2}$/.test(feedTime.value) ? feedTime.value : nowTime();
+    if(feedTargetId) setFeed(feedTargetId, ml, bml, t);
+    else             addFeed(ml, bml, t);
+    closeFeed();
+  }
+
+  document.getElementById('feedBtn').addEventListener('click', openFeed);
+  document.getElementById('feedCancel').addEventListener('click', closeFeed);
+  feedMask.addEventListener('click', function(e){ if(e.target === feedMask) closeFeed(); });
+  mlInput.addEventListener('input', updateOkState);
+  bmlInput.addEventListener('input', updateOkState);
+  feedTime.addEventListener('input', updateOkState);
+  mlInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') confirmFeed(); });
+  bmlInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') confirmFeed(); });
+  /* 勾/取消「有母乳」：展开或收起母乳量输入框 */
+  bmlChk.addEventListener('change', function(){
+    bmlInput.classList.toggle('hidden', !bmlChk.checked);
+    if(bmlChk.checked) setTimeout(function(){ bmlInput.focus(); }, 60);
+    updateOkState();
+  });
+  /* 点固定的奶量：只把数填进去，不关弹窗，等「确定记录」 */
+  document.querySelectorAll('#feedMask .quick button').forEach(function(b){
+    b.addEventListener('click', function(){
+      mlInput.value = b.getAttribute('data-ml');
+      updateOkState();
+    });
+  });
+  feedOk.addEventListener('click', confirmFeed);
+
+  /* ---------------- 默认奶量：右半块一点即记，齿轮可改 ---------------- */
+  var CFG_KEY  = 'duoduo_default_ml_v1';
+  var DEF_ML   = 150;
+  var cfgMask  = document.getElementById('cfgMask');
+  var cfgInput = document.getElementById('cfgInput');
+  var cfgOk    = document.getElementById('cfgOk');
+  var quickBtn = document.getElementById('feedQuickBtn');
+
+  function getDefaultMl(){
+    var v = parseInt(localStorage.getItem(CFG_KEY), 10);
+    return (v >= 1 && v <= 999) ? v : DEF_ML;
+  }
+  function syncQuickLabel(){ quickBtn.textContent = getDefaultMl() + 'ml'; }
+
+  /* 点右半块：不弹窗，按默认奶量记一条 */
+  function quickFeed(){
+    addFeed(getDefaultMl());
+  }
+
+  function syncCfgState(){
+    cfgOk.disabled = !(parseInt(cfgInput.value, 10) > 0);
+  }
+  function openCfg(){
+    cfgInput.value = getDefaultMl();
+    syncCfgState();
+    cfgMask.classList.add('show');
+    setTimeout(function(){ cfgInput.focus(); }, 60);
+  }
+  function closeCfg(){ cfgMask.classList.remove('show'); }
+
+  function saveCfg(){
+    var v = parseInt(cfgInput.value, 10);
+    if(!(v > 0)) return;
+    v = Math.min(v, 999);
+    try{ localStorage.setItem(CFG_KEY, String(v)); }catch(e){}
+    syncQuickLabel();
+    closeCfg();
+  }
+
+  quickBtn.addEventListener('click', quickFeed);
+  document.getElementById('feedCfgBtn').addEventListener('click', openCfg);
+  document.getElementById('cfgCancel').addEventListener('click', closeCfg);
+  cfgMask.addEventListener('click', function(e){ if(e.target === cfgMask) closeCfg(); });
+  cfgInput.addEventListener('input', syncCfgState);
+  cfgInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') saveCfg(); });
+  cfgOk.addEventListener('click', saveCfg);
+  /* 弹窗里的固定值：先填进输入框，再点保存 */
+  document.querySelectorAll('#cfgQuick button').forEach(function(b){
+    b.addEventListener('click', function(){
+      cfgInput.value = b.getAttribute('data-v');
+      syncCfgState();
+    });
+  });
+  syncQuickLabel();
+
+  /* ---------------- 时间弹层 ---------------- */
+  var timeMask   = document.getElementById('timeMask');
+  var timeInput  = document.getElementById('timeInput');
+  var timeTarget = null;   /* { type, id } */
+
+  function openTime(type, id){
+    var item = findEntry(type, id);
+    if(!item) return;
+
+    timeTarget = { type: type, id: id };
+    document.getElementById('timeSub').textContent =
+      fmtDateCN(curDate) + ' · ' + (type === 'feed' ? FEED_LABEL : POOP_LABEL);
+    timeInput.value = item.time;
+    timeMask.classList.add('show');
+  }
+
+  function closeTime(){
+    timeMask.classList.remove('show');
+    timeTarget = null;
+  }
+
+  document.getElementById('timeCancel').addEventListener('click', closeTime);
+  timeMask.addEventListener('click', function(e){ if(e.target === timeMask) closeTime(); });
+  document.getElementById('timeOk').addEventListener('click', function(){
+    if(!timeTarget || !timeInput.value) return;
+    setEntryTime(timeTarget.type, timeTarget.id, timeInput.value);
+    closeTime();
+  });
+
+  /* ---------------- 臭臭 ---------------- */
+  /* 点「臭臭」先弹窗选情况，点确定才记录（不再直接记） */
+  document.getElementById('poopBtn').addEventListener('click', function(){ openPoop(null); });
+
+  /* 臭臭情况弹层：三档快捷 + 自由输入（新增 / 修改共用） */
+  var poopMask   = document.getElementById('poopMask');
+  var poopOpts   = document.querySelectorAll('#poopOpts button');
+  var poopCustom = document.getElementById('poopCustom');
+  var poopOk     = document.getElementById('poopOk');
+  var poopTargetId = null;   /* null = 新增记录 */
+
+  /* 统一清洗等级：合并空白、去首尾空格、限长 30 字（支持逗号组合多种情况） */
+  function normalizeLevel(v){
+    return String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, 30);
+  }
+
+  /* 当前选中的快捷档位（可多选） */
+  function selectedLevels(){
+    var out = [];
+    poopOpts.forEach(function(b){
+      if(b.classList.contains('on')) out.push(b.getAttribute('data-lv'));
+    });
+    return out;
+  }
+  function clearPoopOpts(){
+    poopOpts.forEach(function(b){ b.classList.remove('on'); });
+  }
+
+  /* id 为空 = 新增：默认选中「正常」（与以前点一下即记的默认一致） */
+  function openPoop(id){
+    var isNew = !id;
+    if(!isNew && !findEntry('poop', id)) return;
+
+    poopTargetId = id;
+    clearPoopOpts();
+
+    if(isNew){
+      document.getElementById('poopTimeHint').textContent = fmtDateCN(curDate);
+      poopOpts[POOP_LEVELS.indexOf(POOP_DEFAULT)].classList.add('on');
+      poopCustom.value = '';
+    }else{
+      var item = findEntry('poop', id);
+      document.getElementById('poopTimeHint').textContent = fmtDateCN(curDate) + ' ' + item.time;
+      /* 回填：标准三档只点亮一个（单选）；其余内容填进输入框（按逗号拆分） */
+      var parts = String(item.level || POOP_DEFAULT).split(/[，,、]/);
+      var extra = [];
+      var lit = false;
+      parts.forEach(function(part){
+        var v = normalizeLevel(part);
+        if(!v) return;
+        var i = POOP_LEVELS.indexOf(v);
+        if(i >= 0 && !lit){ poopOpts[i].classList.add('on'); lit = true; }
+        else extra.push(v);
+      });
+      poopCustom.value = extra.join('，');
+    }
+
+    syncPoopOk();
+    poopMask.classList.add('show');
+  }
+
+  function syncPoopOk(){
+    poopOk.disabled = !(selectedLevels().length || normalizeLevel(poopCustom.value));
+  }
+
+  function closePoop(){
+    poopMask.classList.remove('show');
+    poopTargetId = null;
+    poopCustom.value = '';
+    clearPoopOpts();
+  }
+
+  function setPoopLevel(id, level){
+    level = normalizeLevel(level);
+    if(!level) return;
+    var day = getDay(curDate);
+    for(var i = 0; i < day.poop.length; i++){
+      if(day.poop[i].id !== id) continue;
+      var item = day.poop[i];
+      item.level = level;
+      item.u = Date.now();
+      save();
+      render();
+      sync.queue(rowFrom('poop', curDate, item, false, item.u));
+      return;
+    }
+    save();
+    render();
+  }
+
+  /* 点三档：单选，不关闭弹层（再点已选中的可取消），仍可继续填写输入框 */
+  poopOpts.forEach(function(b){
+    b.addEventListener('click', function(){
+      var wasOn = b.classList.contains('on');
+      clearPoopOpts();
+      if(!wasOn) b.classList.add('on');
+      syncPoopOk();
+    });
+  });
+
+  /* 确定：选中的档位 + 输入框内容，用逗号合并后保存（新增或修改） */
+  function confirmPoopCustom(){
+    var parts = selectedLevels();
+    var extra = normalizeLevel(poopCustom.value);
+    if(extra) parts.push(extra);
+    if(!parts.length) return;
+    if(poopTargetId) setPoopLevel(poopTargetId, parts.join('，'));
+    else             addPoop(parts.join('，'));
+    closePoop();
+  }
+  poopCustom.addEventListener('input', syncPoopOk);
+  poopCustom.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ e.preventDefault(); confirmPoopCustom(); }
+  });
+  poopOk.addEventListener('click', confirmPoopCustom);
+  document.getElementById('poopCancel').addEventListener('click', closePoop);
+  poopMask.addEventListener('click', function(e){ if(e.target === poopMask) closePoop(); });
+
+  /* ---------------- 统计 ---------------- */
+  var statMask = document.getElementById('statMask');
+
+  function openStat(){
+    var to = curDate;
+    var from = shiftDate(curDate, -6);
+    document.getElementById('statFrom').value = from;
+    document.getElementById('statTo').value = to;
+    document.getElementById('statResult').innerHTML = '';
+    statMask.classList.add('show');
+  }
+  function closeStat(){ statMask.classList.remove('show'); }
+
+  document.getElementById('statBtn').addEventListener('click', openStat);
+  document.getElementById('statClose').addEventListener('click', closeStat);
+  statMask.addEventListener('click', function(e){ if(e.target === statMask) closeStat(); });
+  document.getElementById('statRun').addEventListener('click', runStat);
+
+  function runStat(){
+    var from = document.getElementById('statFrom').value;
+    var to   = document.getElementById('statTo').value;
+    var box  = document.getElementById('statResult');
+
+    if(!from || !to){ box.innerHTML = '<div class="empty">请选择开始和结束日期</div>'; return; }
+    if(from > to){ var tmp = from; from = to; to = tmp; }
+
+    var days = 0;
+    var bottleCount = 0, bottleMl = 0, breastCount = 0, breastMl = 0, poopCount = 0;
+    var checkCount = {};
+    items.forEach(function(p){ checkCount[p.id] = 0; });
+
+    var d = from;
+    var guard = 0;
+    while(d <= to && guard < 3660){
+      days++;
+      var day = data[d];
+      if(day){
+        var poops = day.poop || [];
+        poops.length && (poopCount += poops.length);
+        var fsum = sumFeed(day.feed);
+        bottleCount += fsum.bottleCount; bottleMl += fsum.bottleMl;
+        breastCount += fsum.breastCount; breastMl += fsum.breastMl;
+        items.forEach(function(p){
+          var arr = (day.checks && day.checks[p.id]) || [];
+          arr.forEach(function(t){ if(t) checkCount[p.id]++; });
+        });
+      }
+      d = shiftDate(d, 1);
+      guard++;
+    }
+
+    if(!days){ box.innerHTML = '<div class="empty">所选日期段没有数据</div>'; return; }
+
+    var avgMl = bottleCount ? Math.round(bottleMl / bottleCount) : 0;
+    var html = '<div class="stat-summary">统计区间：' + from + ' ~ ' + to +
+               '（共 <b>' + days + '</b> 天）</div>';
+
+    html += '<table><thead><tr><th>项目</th><th>次数</th><th>日均</th><th>合计</th></tr></thead><tbody>';
+    html += '<tr><td>🍼 ' + FEED_LABEL + '</td><td>' + bottleCount + ' 次</td><td>' +
+            (bottleCount / days).toFixed(1) + ' 次</td><td>' + bottleMl + ' ml</td></tr>';
+    if(breastCount){
+      html += '<tr><td>🤱 ' + BREAST_LABEL + '</td><td>' + breastCount + ' 次</td><td>' +
+              (breastCount / days).toFixed(1) + ' 次</td><td>' + (breastMl ? breastMl + ' ml' : '—') + '</td></tr>';
+    }
+    html += '<tr><td>💩 ' + POOP_LABEL + '</td><td>' + poopCount + ' 次</td><td>' +
+            (poopCount / days).toFixed(1) + ' 次</td><td>—</td></tr>';
+    items.forEach(function(p){
+      var c = checkCount[p.id];
+      html += '<tr><td>' + escHtml(p.name) + '</td><td>' + c + ' 次</td><td>' +
+              (c / days).toFixed(1) + ' 次</td><td>完成 ' + c + '/' + (days * p.count) + '</td></tr>';
+    });
+    html += '</tbody></table>';
+
+    if(bottleCount){
+      html += '<div class="stat-summary" style="margin-top:10px">喂奶均值：' +
+              '平均每瓶 <b>' + avgMl + ' ml</b>，日均奶量 <b>' +
+              Math.round(bottleMl / days) + ' ml</b></div>';
+    }
+
+    box.innerHTML = html;
+  }
+
+  /* ---------------- 数据导出 / 导入 ---------------- */
+  function exportData(){
+    var now = new Date();
+    var payload = {
+      app: 'duoduo-records',
+      version: 2,
+      exportedAt: now.toISOString(),
+      items: items,          /* 备份里带上项目，换机/清缓存后能完整还原 */
+      records: data
+    };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '多多记录_' + now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  }
+
+  /* 清洗导入内容：只保留合法日期与规范结构，缺失的 id 自动补齐 */
+  function sanitizeRecords(src){
+    var clean = {};
+    Object.keys(src).forEach(function(k){
+      var d = src[k];
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(k) || !d || typeof d !== 'object') return;
+
+      var day = { feed:[], poop:[], checks:{} };
+      (Array.isArray(d.feed) ? d.feed : []).forEach(function(f){
+        if(!f || typeof f !== 'object') return;
+        var ml  = parseInt(f.ml, 10);
+        var bml = parseInt(f.bml, 10);
+        day.feed.push({
+          id: f.id || uid(),
+          ml:  ml  > 0 ? ml  : null,     /* 奶粉量，null = 没喂奶粉 */
+          bml: bml === -1 ? -1 : (bml > 0 ? bml : null),  /* -1 = 有母乳但量未知 */
+          time: /^\d{1,2}:\d{2}$/.test(f.time) ? f.time : '00:00'
+        });
+      });
+      (Array.isArray(d.poop) ? d.poop : []).forEach(function(p){
+        if(!p || typeof p !== 'object') return;
+        day.poop.push({
+          id: p.id || uid(),
+          time: /^\d{1,2}:\d{2}$/.test(p.time) ? p.time : '00:00',
+          level: normalizeLevel(p.level) || POOP_DEFAULT
+        });
+      });
+      var ck = (d.checks && typeof d.checks === 'object') ? d.checks : {};
+      items.forEach(function(p){
+        var arr = Array.isArray(ck[p.id]) ? ck[p.id] : [];
+        var out = [];
+        for(var i = 0; i < p.count; i++){
+          var t = arr[i];
+          out.push(typeof t === 'string' && /^\d{1,2}:\d{2}$/.test(t) ? t : null);
+        }
+        day.checks[p.id] = out;
+      });
+      clean[k] = day;
+    });
+    return clean;
+  }
+
+  /* 清洗导入的项目：名字必填、次数限 1~20、id 缺失自动补 */
+  function sanitizeItems(src){
+    var out = [], seen = {};
+    (Array.isArray(src) ? src : []).forEach(function(it, i){
+      if(!it || typeof it !== 'object') return;
+      var name = String(it.name == null ? '' : it.name).replace(/\s+/g, ' ').trim().slice(0, 12);
+      if(!name) return;
+      var id = (typeof it.id === 'string' && it.id) ? it.id : uid();
+      if(seen[id]) return;
+      seen[id] = 1;
+      var count = parseInt(it.count, 10);
+      out.push({
+        id: id, name: name,
+        count: (count >= 1 && count <= 20) ? count : 1,
+        sort: (typeof it.sort === 'number') ? it.sort : i,
+        u: it.u || Date.now()
+      });
+    });
+    return out;
+  }
+
+  function importData(file){
+    var reader = new FileReader();
+    reader.onload = function(){
+      var obj;
+      try{
+        obj = JSON.parse(String(reader.result));
+      }catch(e){
+        alert('文件解析失败，请选择本应用导出的 JSON 备份文件。');
+        return;
+      }
+      var rec = (obj && obj.records && typeof obj.records === 'object') ? obj.records : obj;
+      if(!rec || typeof rec !== 'object' || Array.isArray(rec)){
+        alert('文件内容不是有效的记录数据。');
+        return;
+      }
+
+      /* 备份里带了项目就一并还原（旧备份没有 items 则保留当前项目，向后兼容） */
+      var importedItems = (obj && Array.isArray(obj.items)) ? sanitizeItems(obj.items) : null;
+
+      var clean = sanitizeRecords(rec);
+      var newDays = Object.keys(clean).length;
+      if(!newDays){
+        alert('文件里没有可导入的日期记录。');
+        return;
+      }
+
+      var oldDays = Object.keys(data).length;
+      if(!confirm('将用文件中的 ' + newDays + ' 天记录覆盖本机现有的 ' + oldDays + ' 天记录。\n\n' +
+                  '覆盖后无法撤销，建议先点「导出数据」备份。是否继续？')) return;
+
+      if(importedItems && importedItems.length){
+        items = importedItems;
+        saveItems();
+        items.forEach(function(it){ sync.pushItem(it); });
+      }
+
+      data = clean;
+      save();
+      curDate = todayStr();
+      render();
+
+      /* 导入的是一份完整数据 → 清掉已传标记，下次同步整份重新上传（以本机为准） */
+      sync.clearSynced();
+      sync.now();
+
+      alert('导入完成：共 ' + newDays + ' 天记录。');
+    };
+    reader.readAsText(file);
+  }
+
+  var importFile = document.getElementById('importFile');
+
+  document.getElementById('exportBtn').addEventListener('click', exportData);
+  document.getElementById('importBtn').addEventListener('click', function(){ importFile.click(); });
+  importFile.addEventListener('change', function(){
+    if(importFile.files && importFile.files[0]) importData(importFile.files[0]);
+    importFile.value = '';
+  });
+
+  /* ---------------- 管理项目：增删项目、改名字、改每天次数 ---------------- */
+  var itemsMask = document.getElementById('itemsMask');
+
+  function renderItemList(){
+    var box = document.getElementById('itemList');
+    if(!items.length){
+      box.innerHTML = '<div class="empty">还没有项目，在下面添加吧</div>';
+      return;
+    }
+    var html = '';
+    items.forEach(function(p){
+      html += '<div class="item-row" data-id="' + escHtml(p.id) + '">' +
+                '<input type="text" class="item-name" maxlength="12" value="' + escHtml(p.name) + '">' +
+                '<input type="number" class="item-count" min="1" max="20" inputmode="numeric" value="' + p.count + '">' +
+                '<button class="item-del" type="button" title="删除">×</button>' +
+              '</div>';
+    });
+    box.innerHTML = html;
+
+    box.querySelectorAll('.item-row').forEach(function(row){
+      var id    = row.getAttribute('data-id');
+      var nameEl  = row.querySelector('.item-name');
+      var countEl = row.querySelector('.item-count');
+
+      function commitName(){
+        var p = findItem(id);
+        if(!p) return;
+        var name = String(nameEl.value || '').replace(/\s+/g, ' ').trim().slice(0, 12);
+        if(!name){ nameEl.value = p.name; return; }
+        if(name === p.name) return;
+        p.name = name;
+        p.u = Date.now();
+        saveItems(); render(); sync.pushItem(p);
+      }
+      function commitCount(){
+        var p = findItem(id);
+        if(!p) return;
+        var c = parseInt(countEl.value, 10);
+        if(!(c >= 1)) c = 1;
+        c = Math.min(c, 20);
+        countEl.value = c;
+        if(c === p.count) return;
+        p.count = c;
+        p.u = Date.now();
+        saveItems(); render(); sync.pushItem(p);
+      }
+
+      nameEl.addEventListener('change', commitName);
+      nameEl.addEventListener('blur', commitName);
+      nameEl.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); nameEl.blur(); } });
+      countEl.addEventListener('change', commitCount);
+      countEl.addEventListener('blur', commitCount);
+      row.querySelector('.item-del').addEventListener('click', function(){ deleteItem(id); });
+    });
+  }
+
+  function openItems(){
+    renderItemList();
+    itemsMask.classList.add('show');
+  }
+  function closeItems(){ itemsMask.classList.remove('show'); }
+
+  function addItem(){
+    var nameEl  = document.getElementById('newItemName');
+    var countEl = document.getElementById('newItemCount');
+    var name = String(nameEl.value || '').replace(/\s+/g, ' ').trim().slice(0, 12);
+    if(!name){ nameEl.focus(); return; }
+
+    var c = parseInt(countEl.value, 10);
+    if(!(c >= 1)) c = 1;
+    c = Math.min(c, 20);
+
+    var maxSort = -1;
+    items.forEach(function(p){ if((p.sort || 0) > maxSort) maxSort = p.sort || 0; });
+
+    var it = { id: uid(), name: name, count: c, sort: maxSort + 1, u: Date.now() };
+    items.push(it);
+    saveItems();
+    render();
+    renderItemList();
+    sync.pushItem(it);
+
+    nameEl.value = '';
+    countEl.value = '1';
+    nameEl.focus();
+  }
+
+  function deleteItem(id){
+    var p = findItem(id);
+    if(!p) return;
+    if(!confirm('删除项目「' + p.name + '」？\n\n已有的勾选记录会保留在数据库里，但页面不再显示。')) return;
+    items.splice(items.indexOf(p), 1);
+    saveItems();
+    render();
+    renderItemList();
+    sync.removeItem(p);        /* 云端该行标记删除，其他手机同步后也会消失 */
+  }
+
+  document.getElementById('manageItemsBtn').addEventListener('click', openItems);
+  document.getElementById('itemsClose').addEventListener('click', closeItems);
+  itemsMask.addEventListener('click', function(e){ if(e.target === itemsMask) closeItems(); });
+  document.getElementById('newItemAdd').addEventListener('click', addItem);
+  document.getElementById('newItemName').addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ e.preventDefault(); addItem(); }
+  });
+  document.getElementById('newItemCount').addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ e.preventDefault(); addItem(); }
+  });
+
+  /* ================= 云端同步（Supabase） =================
+   * 传输 / 队列 / 合并 的通用逻辑都在 sync.js 里，两个页面共用一份。
+   * 这里只告诉它"多多的数据长什么样"：怎么把本地记录变成云端行、
+   * 怎么把云端行合并回本地、首次运行拿什么项目做种子。
+   *
+   * 一条记录 = 云端一行（喂奶/臭臭/勾选各占一行），所以两台手机
+   * 各自新增互不覆盖。冲突时按每条记录的 updated_at 谁新用谁。
+   *
+   * 删除不真删：云端置 deleted=true，本机另存一份「墓碑」，
+   * 免得删掉的东西被另一台手机的旧数据又拉回来。
+   */
+
+  /* 本地一条记录 → 云端一行 */
+  function rowFrom(type, dayStr, item, deleted, u){
+    u = u || Date.now();
+    /* PostgREST 批量插入要求同一批所有行的字段完全一致：
+     * 喂奶带 bml 没有 level、勾选/臭臭带 level 没有 bml，混在一个批次
+     * 会整批报 400（All object keys must match），整份补传时必炸。
+     * 所以每种类型都带上全部字段，用不到的置 null。 */
+    return {
+      id: item.id, day: dayStr, type: type,
+      time: item.time,
+      level: item.level == null ? null : String(item.level),
+      ml:   item.ml   == null ? null : item.ml,        /* 勾选的序号 0 保留，不能变 null */
+      bml:  (type === 'feed' && (item.bml > 0 || item.bml === -1)) ? item.bml : null,
+      deleted: !!deleted,
+      updated_at: new Date(u).toISOString()
+    };
+  }
+
+  /* 云端一行 → 合并进本机；返回是否有改动 */
+  function applyRow(r){
+    var u  = Date.parse(r.updated_at) || 0;
+    var id = r.id;
+
+    if(r.type === 'check') return applyCheckRow(r, u);
+
+    if(sync.isTombstoned(id)) return false;   /* 本机删过的，云端旧数据一律不要 */
+
+    var day = data[r.day];
+    if(!day){
+      if(r.deleted) return false;
+      day = data[r.day] = { feed:[], poop:[], checks:{} };
+    }
+    if(!day.feed) day.feed = [];
+    if(!day.poop) day.poop = [];
+    var arr = r.type === 'feed' ? day.feed : day.poop;
+
+    var cur = null;
+    for(var i = 0; i < arr.length; i++){ if(arr[i].id === id){ cur = arr[i]; break; } }
+
+    if(r.deleted){
+      if(cur && (cur.u || 0) <= u){ arr.splice(arr.indexOf(cur), 1); return true; }
+      return false;
+    }
+    if(cur){
+      if((cur.u || 0) >= u) return false;      /* 本机这份更新 → 保留本机 */
+      if(r.type === 'feed'){
+        cur.ml   = r.ml  > 0 ? r.ml  : null;
+        cur.bml  = r.bml > 0 ? r.bml : (r.bml === -1 ? -1 : null);
+        cur.time = r.time;
+      }else{
+        cur.level = normalizeLevel(r.level) || POOP_DEFAULT;
+        cur.time  = r.time;
+      }
+      cur.u = u;
+      return true;
+    }
+    if(r.type === 'feed'){
+      arr.push({ id:id, ml: r.ml > 0 ? r.ml : null,
+                 bml: r.bml > 0 ? r.bml : (r.bml === -1 ? -1 : null),
+                 time:r.time, u:u });
+    }else{
+      arr.push({ id:id, level: normalizeLevel(r.level) || POOP_DEFAULT, time:r.time, u:u });
+    }
+    return true;
+  }
+
+  /* 勾选框也要能在两台手机之间同步 */
+  function applyCheckRow(r, u){
+    var key = r.level, idx = r.ml;
+    var proj = findItem(key);                 /* 项目被删掉时，历史记录直接忽略、不显示 */
+    if(!proj || !(idx >= 0 && idx < proj.count)) return false;
+
+    if(sync.isTombstoned(r.id)) return false;
+
+    var day = data[r.day];
+    if(!day){
+      if(r.deleted) return false;
+      day = data[r.day] = { feed:[], poop:[], checks:{} };
+    }
+    if(!day.checks) day.checks = {};
+    if(!Array.isArray(day.checks[key])) day.checks[key] = [];
+    while(day.checks[key].length < proj.count) day.checks[key].push(null);
+    if(!day.checkU) day.checkU = {};
+
+    if((day.checkU[r.id] || 0) >= u) return false;
+    day.checks[key][idx] = r.deleted ? null : (r.time || null);
+    day.checkU[r.id] = u;
+    return true;
+  }
+
+  /* 首次全量上传：把某一天的本机记录全部变成云端行（由 sync.js 统一排队） */
+  function allRows(dayStr, d){
+    var now = Date.now();
+    var rows = [];
+
+    (d.feed || []).forEach(function(f){
+      if(!f.u) f.u = now;
+      rows.push(rowFrom('feed', dayStr, f, false, f.u));
+    });
+    (d.poop || []).forEach(function(p){
+      if(!p.u) p.u = now;
+      rows.push(rowFrom('poop', dayStr, p, false, p.u));
+    });
+    if(!d.checkU) d.checkU = {};
+    Object.keys(d.checks || {}).forEach(function(key){
+      (d.checks[key] || []).forEach(function(t, idx){
+        if(t === null || t === undefined) return;   /* 没勾的不上传 */
+        var sid = sidFor(dayStr, key, idx);
+        if(!d.checkU[sid]) d.checkU[sid] = now;
+        rows.push(rowFrom('check', dayStr,
+                 { id:sid, level:key, ml:idx, time:t }, false, d.checkU[sid]));
+      });
+    });
+    return rows;
+  }
+
+  /* 把"多多的数据长什么样"交给共用的同步模块 */
+  var sync = FamilySync.create({
+    app:        APP_ID,
+    url:        'https://spb-gn2d24aqdg6g5qla.supabase.opentrust.net',
+    key:        'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiIsInJlZiI6InNwYi1nbjJkMjRhcWRnNmc1cWxhIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3ODM1MTg2ODUsImV4cCI6MjA5OTA5NDY4NX0.M8E6GPBbZyeobXlIew7oFi4D-1xB54hCHqZ4aE9X6WU',
+    /* 本实例的面板没有 Exposed schemas 开关，自建 schema 暴露不了，
+     * 所以沿用默认已暴露的 public，用独立表名和若依那套隔开 */
+    schema:     'public',
+    table:      'duoduo_records',
+    itemsTable: 'duoduo_items',
+    keys: {
+      data:         STORE_KEY,
+      items:        ITEMS_KEY,
+      tomb:         'duoduo_tomb_v1',
+      tombItems:    'duoduo_tomb_items_v1',
+      pending:      'duoduo_pending_v1',
+      pendingItems: 'duoduo_pending_items_v1',
+      synced:       'duoduo_synced_v1'
+    },
+    getData:       function(){ return data;  },
+    getItems:      function(){ return items; },
+    onChange:      function(){ save(); render(); },
+    onItemsChange: function(){ saveItems(); render(); },
+    rowFrom:       rowFrom,
+    applyRow:      applyRow,
+    allRows:       allRows,
+    seedItems:     function(){
+      return SEED_ITEMS.map(function(p){ return { id:p.id, name:p.name, count:p.count }; });
+    }
+  });
+
+  document.getElementById('syncBtn').addEventListener('click', sync.now);
+
+  /* ---------------- 屏幕尺寸 / 旋转：重算行高 ---------------- */
+  var rzTimer = null;
+  window.addEventListener('resize', function(){
+    clearTimeout(rzTimer);
+    rzTimer = setTimeout(function(){
+      rowH = 0; fitDetail();
+    }, 150);
+  });
+
+  /* ---------------- 启动 ---------------- */
+  render();
+  sync.now();
+})();
+</script>
+
+<script>
+/* ---------------- PWA：离线缓存 + 手动更新版本 ----------------
+ * 页面内容不再自动更新：装好后完全从本机缓存读取（秒开、可离线）。
+ * 需要新版时，点底部「更新版本」，粘贴最新的访问链接（或新 token）即可。
+ */
+(function(){
+  var supported = ('serviceWorker' in navigator) && location.protocol === 'https:';
+  var btn       = document.getElementById('updateBtn');
+  var mask      = document.getElementById('updateMask');
+  var input     = document.getElementById('updateInput');
+  var hint      = document.getElementById('updateHint');
+  var okBtn     = document.getElementById('updateOk');
+  var cancelBtn = document.getElementById('updateCancel');
+
+  /* 只注册，不做任何自动更新：不调用 reg.update()，也不在页面可见时轮询
+   * 注册地址拼接 location.search：EdgeOne 预览的 token 在查询串里，
+   * 不带上会被鉴权拦成 401，sw.js 注册失败离线缓存就完全不生效 */
+  if(supported){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js' + location.search, { updateViaCache: 'none' }).catch(function(){});
+    });
+  }
+
+  function openMask(){
+    if(!supported){
+      alert('当前环境不支持离线缓存（需通过 https 访问）。');
+      return;
+    }
+    hint.textContent = '仅替换页面缓存，不影响已有记录';
+    okBtn.disabled = false;
+    input.value = '';   /* 留空：iPhone 的独立窗口拿不到新 token，更新必须粘贴控制台新链接 */
+    mask.classList.add('show');
+    setTimeout(function(){ input.focus(); }, 60);
+  }
+  function closeMask(){ mask.classList.remove('show'); }
+
+  /* 统一按完整链接处理；没写协议头则自动补 https:// */
+  function buildUrl(v){
+    v = (v || '').trim();
+    if(!v) return '';
+    if(!/^https?:\/\//i.test(v)) v = 'https://' + v.replace(/^\/+/, '');
+    try{ return new URL(v).href; }catch(err){ return ''; }
+  }
+
+  function doUpdate(){
+    /* 留空就用当前页面地址：打开最新的预览链接后，点「更新」即可，无需手动粘贴长链接 */
+    var url = buildUrl(input.value) || buildUrl(location.href);
+    if(!url){ hint.textContent = '请粘贴完整链接（域名 + token）'; return; }
+
+    okBtn.disabled = true;
+    hint.textContent = '正在获取最新版本…';
+
+    navigator.serviceWorker.ready.then(function(reg){
+      var sw = reg.active || reg.waiting || reg.installing;
+      if(!sw) throw new Error('no sw');
+
+      var done = false;
+      var timer = setTimeout(function(){ finish(false); }, 25000);
+
+      function finish(ok){
+        if(done) return;
+        done = true;
+        clearTimeout(timer);
+        navigator.serviceWorker.removeEventListener('message', onMsg);
+        if(ok){
+          hint.textContent = '更新成功，正在刷新…';
+          location.reload();
+        }else{
+          okBtn.disabled = false;
+          hint.textContent = '更新失败：当前链接已失效，请回控制台点「预览」拿新链接后重试';
+        }
+      }
+      function onMsg(ev){
+        var d = ev.data || {};
+        if(d.type === 'UPDATE_RESULT') finish(!!d.ok);
+      }
+
+      navigator.serviceWorker.addEventListener('message', onMsg);
+      /* 由 SW 自己抓取新版本：成功才替换缓存，失败保留原缓存 */
+      sw.postMessage({ type: 'UPDATE', url: url });
+    }).catch(function(){
+      okBtn.disabled = false;
+      hint.textContent = '更新失败：离线服务未就绪，请刷新页面后重试';
+    });
+  }
+
+  if(btn) btn.addEventListener('click', openMask);
+  if(okBtn) okBtn.addEventListener('click', doUpdate);
+  if(cancelBtn) cancelBtn.addEventListener('click', closeMask);
+  if(mask) mask.addEventListener('click', function(e){ if(e.target === mask) closeMask(); });
+  if(input) input.addEventListener('keydown', function(e){
+    if(e.key === 'Enter') doUpdate();
+  });
+})();
+</script>
+</body>
+</html>
